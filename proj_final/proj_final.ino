@@ -10,7 +10,7 @@
  *          Marilene Andrade Garcia - 10276974
  *          Vinícius L. S. Genesio  - 10284688
  *          
- * Código baseado no código escrito por:
+ * Código baseado em:
  * https://www.emqx.com/en/blog/esp8266-connects-to-the-public-mqtt-broker
 *********/
 
@@ -24,6 +24,7 @@
 #include <ESPAsyncWebServer.h>
 #include <Adafruit_Sensor.h>
 #include <DHT.h>
+#include <Hash.h>
 
 // Definicao dos pinos
 #define DHTPIN  4  // pino conectado ao sensor DTH
@@ -37,12 +38,20 @@ DHT dht(DHTPIN, DHTTYPE);
 // Valores de temperatura e pressão
 float t = 0.0;
 float h = 0.0;
+float chave_privada = 13;
+float indice = -1;
+float indice_anterior = -1;
+String stringUm;;
+String stringDois;
+String stringTres;
+String stringQuatro;
+String stringCinco;
 
 // Tempo de atualização das medidas
 unsigned long previousMillis = 0; 
 
 // Leitura do sensor a cada 10 segundos
-const long interval = 5000;  
+const long interval = 15000;  
 
 
 // WiFi
@@ -51,7 +60,7 @@ const char *password = "SejaBemVindo69";  // Enter WiFi password
 
 // MQTT Broker
 const char *mqtt_broker = "broker.emqx.io";
-const char *topic = "ssc0147/trab_final";
+const char *topic = "ssc0147/trab_final/sensor";
 const char *mqtt_username = "emqx";
 const char *mqtt_password = "public";
 const int mqtt_port = 1883;
@@ -86,11 +95,15 @@ void setup() {
           delay(2000);
       }
   }
+  randomSeed(analogRead(0));
 }
 
 void loop() {
   unsigned long currentMillis = millis();
   if (currentMillis - previousMillis >= interval) {
+    
+    indice_anterior = indice;
+    indice = random(1, 200);
     digitalWrite(LEDRPIN, LOW);
     digitalWrite(LEDGPIN, HIGH);
     client.loop();
@@ -121,11 +134,13 @@ void loop() {
       Serial.println(h);
     }
     
-    String stringUm = String(newT, 2);
-    String stringDois = String(newH, 2);
-    String stringTres = stringUm + " " + stringDois;
-    char mensagem[15];
-    stringTres.toCharArray(mensagem, 13);
+    stringUm = String(newT, 2);
+    stringDois = String(newH, 2);
+    stringTres = String(indice, 2);
+    stringQuatro = String(indice_anterior, 2);
+    stringCinco = stringUm + " " + stringDois + " " + stringTres + " " + stringQuatro;
+    char mensagem[30];
+    stringCinco.toCharArray(mensagem, 30);
     client.publish(topic, mensagem);
   }
   digitalWrite(LEDGPIN, LOW);
